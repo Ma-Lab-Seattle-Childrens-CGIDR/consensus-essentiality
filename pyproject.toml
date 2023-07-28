@@ -29,9 +29,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/unknown/consensus-essentiality#readme"
-Issues = "https://github.com/unknown/consensus-essentiality/issues"
-Source = "https://github.com/unknown/consensus-essentiality"
+Documentation = "https://github.com/Ma-Lab-Seattle-Childrens-CGIDR/consensus-essentiality#readme"
+Issues = "https://github.com/Ma-Lab-Seattle-Childrens-CGIDR/consensus-essentiality/issues"
+Source = "https://github.com/Ma-Lab-Seattle-Childrens-CGIDR/consensus-essentiality"
 
 [tool.hatch.version]
 path = "src/consensus_essentiality/__about__.py"
