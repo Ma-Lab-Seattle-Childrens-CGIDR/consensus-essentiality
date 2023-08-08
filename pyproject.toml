@@ -48,6 +48,10 @@ cov = [
   "test-cov",
   "cov-report",
 ]
+[tool.hatch.envs.docs]
+dependencies = [
+  "sphinx"
+]
 
 [[tool.hatch.envs.all.matrix]]
 python = ["3.10", "3.11"]
