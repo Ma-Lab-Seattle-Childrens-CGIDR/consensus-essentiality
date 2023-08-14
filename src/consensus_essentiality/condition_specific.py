@@ -172,7 +172,15 @@ class EnforceOff:
     """
 
     def __init__(self, model, solution, tol):
-        """Constructor method
+        """
+        Constructor method
+
+        :param model: A genome scale metabolic model to create the context specific model from
+        :type model: cobra.Model
+        :param solution: Solution returned from the imat methods, with fluxes property
+        :type solution: cobra.Solution
+        :param tol: Cutoff, below which reactions are considered off and knocked out
+        :type tol: float
         """
         self.model = model
         self.solution = solution
@@ -182,6 +190,7 @@ class EnforceOff:
     def __enter__(self):
         """
         Method called on entering context, updates the model and returns it
+
         :return: Updated model object
         :rtype: cobra.Model
         """
@@ -199,6 +208,7 @@ class EnforceOff:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         Method called upon exiting context, restores models original reaction bounds
+
         :param exc_type: Type of exception that caused exit
         :param exc_val: Value of exception that caused exit
         :param exc_tb: Traceback of exception that caused exit
@@ -225,7 +235,17 @@ class EnforceInactive:
     """
 
     def __init__(self, model: cobra.Model, solution: cobra.Solution, epsilon: float, low_expr_rxns: list):
-        """Constructor method
+        """
+        Constructor method
+
+        :param model: A genome scale metabolic model to create the context specific model from
+        :type model: cobra.Model
+        :param solution: Solution returned from the imat methods, with fluxes property
+        :type solution: cobra.Solution
+        :param epsilon: Cutoff, below which reactions are considered inactive, above which reactions are considered active
+        :type epsilon: float
+        :param low_expr_rxns: List of reactions which are considered to have low expression values
+        :type low_expr_rxns: list
         """
         self.model = model
         self.solution = solution
@@ -236,6 +256,7 @@ class EnforceInactive:
     def __enter__(self):
         """
         Method called on entering context, updates the model and returns it
+
         :return: Updated model object
         :rtype: cobra.Model
         """
@@ -257,6 +278,7 @@ class EnforceInactive:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         Method called upon exiting context, restores models original reaction bounds
+
         :param exc_type: Type of exception that caused exit
         :param exc_val: Value of exception that caused exit
         :param exc_tb: Traceback of exception that caused exit
@@ -283,7 +305,17 @@ class EnforceActive:
     """
 
     def __init__(self, model: cobra.Model, solution: cobra.Solution, epsilon: float, high_expr_rxns: list):
-        """Constructor method
+        """
+        Constructor method
+
+        :param model: A genome scale metabolic model to create the context specific model from
+        :type model: cobra.Model
+        :param solution: Solution returned from the imat methods, with fluxes property
+        :type solution: cobra.Solution
+        :param epsilon: Cutoff, below which reactions are considered inactive, above which reactions are considered active
+        :type epsilon: float
+        :param high_expr_rxns: List of reactions which are considered to have high expression values
+        :type high_expr_rxns: list
         """
         self.model = model
         self.solution = solution
@@ -294,6 +326,7 @@ class EnforceActive:
     def __enter__(self):
         """
         Method called on entering context, updates the model and returns it
+
         :return: Updated model object
         :rtype: cobra.Model
         """
@@ -317,6 +350,7 @@ class EnforceActive:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         Method called upon exiting context, restores models original reaction bounds
+
         :param exc_type: Type of exception that caused exit
         :param exc_val: Value of exception that caused exit
         :param exc_tb: Traceback of exception that caused exit
@@ -347,7 +381,19 @@ class EnforceBoth:
 
     def __init__(self, model: cobra.Model, solution: cobra.Solution, epsilon: float, high_expr_rxns: list,
                  low_expr_rxns: list):
-        """Constructor method
+        """
+        Constructor method
+
+        :param model: A genome scale metabolic model to create the context specific model from
+        :type model: cobra.Model
+        :param solution: Solution returned from the imat methods, with fluxes property
+        :type solution: cobra.Solution
+        :param epsilon: Cutoff, below which reactions are considered inactive, above which reactions are considered active
+        :type epsilon: float
+        :param high_expr_rxns: List of reactions which are considered to have high expression values
+        :type high_expr_rxns: list
+        :param low_expr_rxns: List of reactions which are considered to have low expression values
+        :type low_expr_rxns: list
         """
         self.model = model
         self.solution = solution
@@ -359,6 +405,7 @@ class EnforceBoth:
     def __enter__(self):
         """
         Method called on entering context, updates the model and returns it
+
         :return: Updated model object
         :rtype: cobra.Model
         """
@@ -394,6 +441,7 @@ class EnforceBoth:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         Method called upon exiting context, restores models original reaction bounds
+
         :param exc_type: Type of exception that caused exit
         :param exc_val: Value of exception that caused exit
         :param exc_tb: Traceback of exception that caused exit
@@ -422,7 +470,19 @@ class EnforceInactiveOff:
     """
 
     def __init__(self, model: cobra.Model, solution: cobra.Solution, epsilon: float, tol: float, low_expr_rxns: list):
-        """Constructor method
+        """
+        Constructor method
+
+        :param model: A genome scale metabolic model to create the context specific model from
+        :type model: cobra.Model
+        :param solution: Solution returned from the imat methods, with fluxes property
+        :type solution: cobra.Solution
+        :param epsilon: Cutoff, below which reactions are considered inactive, above which reactions are considered active
+        :type epsilon: float
+        :param tol: Cutoff, below which reactions are considered off
+        :type tol: float
+        :param low_expr_rxns: List of reactions which are considered to have low expression values
+        :type low_expr_rxns: list
         """
         self.model = model
         self.solution = solution
@@ -434,6 +494,7 @@ class EnforceInactiveOff:
     def __enter__(self):
         """
         Method called on entering context, updates the model and returns it
+
         :return: Updated model object
         :rtype: cobra.Model
         """
@@ -464,6 +525,7 @@ class EnforceInactiveOff:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         Method called upon exiting context, restores models original reaction bounds
+
         :param exc_type: Type of exception that caused exit
         :param exc_val: Value of exception that caused exit
         :param exc_tb: Traceback of exception that caused exit
@@ -480,6 +542,19 @@ class EnforceInactiveOff:
 # region Helper Functions
 # There is some redundancy to this function
 def _force_inactive(epsilon: float, lb: float, ub: float, reversible: bool) -> tuple[float, float]:
+    """
+    Function to force reaction to have flux less than epsilon
+    :param epsilon: Cutoff value for reaction to be considered active
+    :type epsilon: float
+    :param lb: Lower bound of the reaction flux
+    :type lb: float
+    :param ub: Upper bound of the reaction flux
+    :type ub: float
+    :param reversible: Whether the reaction is reversible or not
+    :type reversible: bool
+    :return: Updated bounds
+    :rtype: tuple[float,float]
+    """
     updated_lb = lb
     updated_ub = ub
     # If the reaction is reversible, its bounds range spans 0
@@ -523,6 +598,21 @@ def _force_inactive(epsilon: float, lb: float, ub: float, reversible: bool) -> t
 
 # This function is for forcing reactions to be above epsilon
 def _force_active(epsilon: float, lb: float, ub: float, reversible: bool, forward: bool) -> tuple[float, float]:
+    """
+    Function to force reaction to have flux greater than epsilon
+    :param epsilon: Cutoff value for reaction to be considered active
+    :type epsilon: float
+    :param lb: Lower bound of the reaction flux
+    :type lb: float
+    :param ub: Upper bound of the reaction flux
+    :type ub: float
+    :param reversible: Whether the reaction is reversible or not
+    :type reversible: bool
+    :param forward: Whether the reaction is forward or reverse in the flux solution (forward if positive flux)
+    :type forward: bool
+    :return: Updated bounds
+    :rtype: tuple[float,float]
+    """
     updated_lb = lb
     updated_ub = ub
     if reversible:

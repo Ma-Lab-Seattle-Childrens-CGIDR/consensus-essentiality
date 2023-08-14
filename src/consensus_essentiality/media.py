@@ -41,7 +41,7 @@ def load_media(model: cobra.Model, media: pd.DataFrame, rxn_col=None, lb_col=Non
     return model
 
 
-def load_media_file(model:cobra.Model, media_file:TextIO, rxn_col:str=None, lb_col:str=None, ub_col:str=None):
+def load_media_file(model:cobra.Model, media_file:TextIO, rxn_col:str=None, lb_col:str=None, ub_col:str=None, **kwargs):
     """
     Wrapper around load_media function to load media from a csv file
     :param model: Model being updated
@@ -58,8 +58,10 @@ def load_media_file(model:cobra.Model, media_file:TextIO, rxn_col:str=None, lb_c
     :param rxn_col: Pandas column label (or other object that can be passed to [], and loc dataframe methods) to
         select the column containing the reaction id
     :type rxn_col: str (or other object that can be passed to [], and loc dataframe methods)
+    :param kwargs: Keyword arguments passed to pandas read_csv function
+    :type kwargs: dict
     :return: Updated Model
     :rtype: cobra.Model
     """
-    media = pd.read_csv(media_file)
+    media = pd.read_csv(media_file, **kwargs)
     return load_media(model, media, rxn_col=rxn_col, lb_col=lb_col, ub_col=ub_col)
