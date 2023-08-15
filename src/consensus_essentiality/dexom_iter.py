@@ -55,10 +55,10 @@ class DiversityEnumIterator:
     :type reaction_weights: pd.Series
     :param prev_sol: A previous imat solution
     :type prev_sol: cobra.Solution
-    :param eps: Threshold for reaction to be considered active
-    :type eps: float
-    :param thr: Threshold for reaction to be considered on
-    :type thr: float
+    :param epsilon: Threshold for reaction to be considered active
+    :type epsilon: float
+    :param threshold: Threshold for reaction to be considered on
+    :type threshold: float
     :param obj_tol: Variation allowed in objective values for the solution
     :type obj_tol: float
     :param maxiter: Maximum number of solutions to search for
@@ -78,7 +78,7 @@ class DiversityEnumIterator:
     """
 
     def __init__(self, model: cobra.Model, reaction_weights: pd.Series, prev_sol: cobra.Solution = None,
-                 eps: float = DEFAULT_VALUES['epsilon'], thr: float = DEFAULT_VALUES['threshold'],
+                 epsilon: float = DEFAULT_VALUES['epsilon'], threshold: float = DEFAULT_VALUES['threshold'],
                  obj_tol: float = DEFAULT_VALUES['obj_tol'], maxiter: int = DEFAULT_VALUES['maxiter'],
                  dist_anneal: float = DEFAULT_VALUES['dist_anneal'], out_path: TextIO = 'enum_dexom',
                  icut: bool = True, full: bool = False, save: bool = False,
@@ -89,8 +89,8 @@ class DiversityEnumIterator:
         self.model = model
         self.reaction_weights = reaction_weights
         self.prev_sol = prev_sol
-        self.eps = eps
-        self.thr = thr
+        self.eps = epsilon
+        self.thr = threshold
         self.obj_tol = obj_tol
         self.maxiter = maxiter
         self.dist_anneal = dist_anneal
@@ -216,10 +216,10 @@ class IcutEnumIterator:
     :type reaction_weights: pd.Series
     :param prev_sol: A previous imat solution
     :type prev_sol: cobra.Solution
-    :param eps: Threshold for reaction to be considered active
-    :type eps: float
-    :param thr: Threshold for reaction to be considered on
-    :type thr: float
+    :param epsilon: Threshold for reaction to be considered active
+    :type epsilon: float
+    :param threshold: Threshold for reaction to be considered on
+    :type threshold: float
     :param obj_tol: Variation allowed in objective values for the solution
     :type obj_tol: float
     :param maxiter: Maximum number of solutions to search for
@@ -231,7 +231,7 @@ class IcutEnumIterator:
     """
 
     def __init__(self, model: cobra.Model, reaction_weights: pd.Series, prev_sol: Union[cobra.Solution, None] = None,
-                 eps: float = DEFAULT_VALUES['epsilon'], thr: float = DEFAULT_VALUES['threshold'],
+                 epsilon: float = DEFAULT_VALUES['epsilon'], threshold: float = DEFAULT_VALUES['threshold'],
                  obj_tol: float = DEFAULT_VALUES['obj_tol'], maxiter: int = DEFAULT_VALUES['maxiter'],
                  full: bool = False, verbose: bool = False):
         """Constructor method
@@ -239,8 +239,8 @@ class IcutEnumIterator:
         self.model = model
         self.reaction_weights = reaction_weights
         self.prev_sol = prev_sol
-        self.eps = eps
-        self.thr = thr
+        self.eps = epsilon
+        self.thr = threshold
         self.obj_tol = obj_tol
         self.maxiter = maxiter
         self.full = full
@@ -341,10 +341,10 @@ class MaxDistEnumIterator:
     :type reaction_weights: pd.Series
     :param prev_sol: A previous imat solution
     :type prev_sol: cobra.Solution
-    :param eps: Threshold for reaction to be considered active
-    :type eps: float
-    :param thr: Threshold for reaction to be considered on
-    :type thr: float
+    :param epsilon: Threshold for reaction to be considered active
+    :type epsilon: float
+    :param threshold: Threshold for reaction to be considered on
+    :type threshold: float
     :param obj_tol: Variation allowed in objective values for the solution
     :type obj_tol: float
     :param maxiter: Maximum number of solutions to search for
@@ -360,19 +360,19 @@ class MaxDistEnumIterator:
     """
 
     def __init__(self, model: cobra.Model, reaction_weights: pd.Series, prev_sol: cobra.Solution = None,
-                 eps: float = DEFAULT_VALUES['epsilon'], thr: float = DEFAULT_VALUES["threshold"],
+                 epsilon: float = DEFAULT_VALUES['epsilon'], threshold: float = DEFAULT_VALUES["threshold"],
                  obj_tol: float = DEFAULT_VALUES["obj_tol"], maxiter: int = DEFAULT_VALUES["maxiter"],
                  icut: bool = True, full: bool = False, only_ones: bool = False, verbose=True):
         """Constructor Method
         """
         # Check tolerance
-        check_threshold_tolerance(model=model, epsilon=eps, threshold=thr)
+        check_threshold_tolerance(model=model, epsilon=epsilon, threshold=threshold)
         # Store the input values in the object
         self.model = model
         self.reaction_weights = reaction_weights
         self.prev_sol = prev_sol
-        self.eps = eps
-        self.thr = thr
+        self.eps = epsilon
+        self.thr = threshold
         self.obj_tol = obj_tol
         self.maxiter = maxiter
         self.icut = icut

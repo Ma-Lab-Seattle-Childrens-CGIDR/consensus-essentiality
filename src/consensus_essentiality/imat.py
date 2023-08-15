@@ -8,13 +8,15 @@ from typing import Callable, Union
 import cobra
 from dexom_python.imat_functions import imat
 from dexom_python.default_parameter_values import DEFAULT_VALUES
-from dexom_python.gpr_rules import expression2qualitative, apply_gpr
+from dexom_python.gpr_rules import apply_gpr
 import numpy as np
 import pandas as pd
 
+import consensus_essentiality.utils
 # Local imports
 from consensus_essentiality.condition_specific import enforce_off, \
-    enforce_inactive, enforce_active, enforce_both
+    enforce_inactive, enforce_active, enforce_both, enforce_inactive_off
+from consensus_essentiality.gene_expression import expression_to_weights
 
 
 def imat_rxn_weights(model: cobra.Model, reaction_weights, method: str = "enforce off",
@@ -56,17 +58,21 @@ def imat_rxn_weights(model: cobra.Model, reaction_weights, method: str = "enforc
     result = imat(model, reaction_weights, epsilon=epsilon, threshold=threshold, full=False)
     low_expr_rxns = list(reaction_weights[np.isclose(reaction_weights, -1)].index)
     high_expr_rxns = list(reaction_weights[np.isclose(reaction_weights, 1)].index)
-    if method.lower() in ["enforce_off", "enforce-off", "enforce off", "eo"]:
-        updated_model = enforce_off(model=model, solution=result, tol=threshold)
-    elif method.lower() in ["enforce_inactive", "enforce-inactive", "enforce inactive", "ei"]:
+    method = consensus_essentiality.utils.parse_model_method(method)
+    if method == "enforce_off":
+        updated_model = enforce_off(model=model, solution=result, thr=threshold)
+    elif method == "enforce_inactive":
         updated_model = enforce_inactive(model=model, solution=result, epsilon=epsilon,
                                          low_expr_rxns=low_expr_rxns)
-    elif method.lower() in ["enforce_active", "enforce-active", "enforce active", "ea"]:
+    elif method == "enforce_active":
         updated_model = enforce_active(model=model, solution=result, epsilon=epsilon,
                                        high_expr_rxns=high_expr_rxns)
-    elif method.lower() in ["enforce_both", "enforce-both", "enforce both", "eb"]:
+    elif method == "enforce_both":
         updated_model = enforce_both(model=model, solution=result, epsilon=epsilon,
                                      low_expr_rxns=low_expr_rxns, high_expr_rxns=high_expr_rxns)
+    elif method == "enforce_inactive_off":
+        updated_model = enforce_inactive_off(model=model, solution=result, epsilon=epsilon,
+                                             thr=threshold, low_expr_rxns=low_expr_rxns)
     return updated_model
 
 
@@ -111,16 +117,9 @@ def imat_gene_expression(model: cobra.Model, gene_expression: Union[pd.DataFrame
        below epsilon to have maximum flux set to epsilon, and reactions with weight 1 and a flux above epsilon have
        their minimum flux set to epsilon
     """
-    # If the genes are columns, transpose the dataframe so that they are now
-    if gene_axis == 1:
-        gene_expression = gene_expression.transpose()
-    # If there are multiple columns, they need to be aggregated
-    if (not (type(gene_expression) == pd.Series)) and gene_expression.shape[1] > 1:
-        gene_expression = gene_expression.aggregate(agg_fun, axis=1)
-    # Convert the one column dataframe into a pandas series
-    gene_expression = gene_expression.squeeze()
-    qual_gene_expression = expression2qualitative(gene_expression, column_list=None, proportion=proportion,
-                                                  significant_genes='both', save=False)
+    qual_gene_expression = expression_to_weights(gene_expression, proportion, gene_axis, agg_fun)
     rxn_weights = apply_gpr(model=model, gene_weights=qual_gene_expression, save=False, duplicates='remove', null=0.)
     return imat_rxn_weights(model=model, reaction_weights=rxn_weights, method=method,
                             epsilon=epsilon, threshold=threshold)
+
+

@@ -1,11 +1,18 @@
 """
 Module with utility functions for consensus_essentiality
 """
+# region imports
+# Standard library imports
 import os
 import re
 import sys
 
+from consensus_essentiality.dexom_iter import DiversityEnumIterator, MaxDistEnumIterator, IcutEnumIterator
 
+
+# endregion
+
+# region Context Managers
 class HiddenPrints:
     """
     Context manager to stop methods within the context from printing
@@ -37,8 +44,9 @@ class HiddenPrints:
         """
         sys.stdout.close()
         sys.stdout = self._original_stdout
+# endregion
 
-
+# region parsing methods
 def parse_enum_method(method: str):
     """
     The parse_enum_method function takes a string and returns the corresponding enumeration method.
@@ -60,7 +68,6 @@ def parse_enum_method(method: str):
 
 
 def parse_model_method(method: str):
-
     """
     The parse_model_method function takes a string and parses it into one of the following strings:
         - enforce_active
@@ -109,3 +116,32 @@ def parse_model_method(method: str):
             raise ValueError("Couldn't parse context specific model method: %s" % method)
     else:
         raise ValueError("Couldn't parse context specific model method: %s" % method)
+# endregion
+def create_iterator(model, reaction_weights, enum_method, kwargs):
+    """
+    Method to create an iterator from a model and reactions weights, using enum_method
+
+    :param model: Base metabolic model to use for creating context specific models
+    :type model: cobra.Model
+    :param reaction_weights: Reaction weights for the enumeration method, indexed by reaction id, where values of -1
+        mean the reaction has a low expression level, values of 1 mean the reaction has a high expression level,
+        and 0 is for all other reactions
+    :type reaction_weights: pd.Series
+    :param enum_method: Specify the enumeration method to use (i.e. diversity, maxdist, or icut)
+    :type enum_method: str
+    :param kwargs: Keyword dictionary passed to enum_method iterator class init function, see documentation
+        for the desired class for information on possible arguments
+    :type kwargs: dict
+    :return: Class for iterating through the enumerated context specific solutions
+    :rtype: DiversityEnumIterator, MaxDistEnumIterator, or IcutEnumIterator
+    """
+    enum_method = parse_enum_method(enum_method)
+    if enum_method == "diversity":
+        iterator = DiversityEnumIterator(model=model, reaction_weights=reaction_weights, **kwargs)
+    elif enum_method == "maxdist":
+        iterator = MaxDistEnumIterator(model=model, reaction_weights=reaction_weights, **kwargs)
+    elif enum_method == "icut":
+        iterator = IcutEnumIterator(model=model, reaction_weights=reaction_weights, **kwargs)
+    else:
+        raise ValueError("Couldn't parse Enumeration Method")
+    return iterator

@@ -1,6 +1,7 @@
 """
 Module with functionality to map a function to DEXOM enumeration methods
 """
+# region imports
 # Standard Library Imports
 from typing import Callable
 
@@ -13,40 +14,13 @@ import pandas as pd
 # Local imports
 from consensus_essentiality.condition_specific import EnforceOff, EnforceBoth, EnforceActive, EnforceInactive, \
     EnforceInactiveOff
-from consensus_essentiality.dexom_iter import DiversityEnumIterator, MaxDistEnumIterator, IcutEnumIterator
-from consensus_essentiality.utils import parse_enum_method, parse_model_method
+from consensus_essentiality.utils import parse_model_method, create_iterator
 
 
-def create_iterator(model, reaction_weights, enum_method, kwargs):
-    """
-    Method to create an iterator from a model and reactions weights, using enum_method
-
-    :param model: Base metabolic model to use for creating context specific models
-    :type model: cobra.Model
-    :param reaction_weights: Reaction weights for the enumeration method, indexed by reaction id, where values of -1
-        mean the reaction has a low expression level, values of 1 mean the reaction has a high expression level,
-        and 0 is for all other reactions
-    :type reaction_weights: pd.Series
-    :param enum_method: Specify the enumeration method to use (i.e. diversity, maxdist, or icut)
-    :type enum_method: str
-    :param kwargs: Keyword dictionary passed to enum_method iterator class init function, see documentation
-        for the desired class for information on possible arguments
-    :type kwargs: dict
-    :return: Class for iterating through the enumerated context specific solutions
-    :rtype: DiversityEnumIterator, MaxDistEnumIterator, or IcutEnumIterator
-    """
-    enum_method = parse_enum_method(enum_method)
-    if enum_method == "diversity":
-        iterator = DiversityEnumIterator(model=model, reaction_weights=reaction_weights, **kwargs)
-    elif enum_method == "maxdist":
-        iterator = MaxDistEnumIterator(model=model, reaction_weights=reaction_weights, **kwargs)
-    elif enum_method == "icut":
-        iterator = IcutEnumIterator(model=model, reaction_weights=reaction_weights, **kwargs)
-    else:
-        raise ValueError("Couldn't parse Enumeration Method")
-    return iterator
+# endregion
 
 
+# region mapping functions
 def sol_map(model: cobra.Model, reaction_weights: pd.Series, fun: Callable, fun_kwargs: dict,
             enum_method: str = "diversity",
             **kwargs):
@@ -87,7 +61,6 @@ def sol_map(model: cobra.Model, reaction_weights: pd.Series, fun: Callable, fun_
 
 def model_map(model: cobra.Model, reaction_weights: pd.Series, fun: Callable, fun_kwargs: dict,
               enum_method: str = "diversity", context_specific_method: str = "enforce_off", **kwargs):
-
     """
     Apply a function to each context specific model created by the selected DEXOM enumeration method.
 
@@ -108,7 +81,7 @@ def model_map(model: cobra.Model, reaction_weights: pd.Series, fun: Callable, fu
     :param context_specific_method: Determine which method should be used for creating the context specific models,
         options are enforce_off, enforce_inactive, enforce_inactive_off, enforce_active, or enforce_both
     :type context_specific_method: str
-    :param kwargs: Pass in arguments to the model_map function
+    :param kwargs: Pass in arguments to the iterator's constructor function
     :type kwargs: dict
     :return: A list of results
     :rtype: list
@@ -123,7 +96,7 @@ def model_map(model: cobra.Model, reaction_weights: pd.Series, fun: Callable, fu
     else:
         epsilon = DEFAULT_VALUES["epsilon"]
     low_expr_rxns = list(reaction_weights[np.isclose(reaction_weights, -1.)].index)
-    high_expr_rxns = list(reaction_weights[np.isclose(reaction_weights, 1.)])
+    high_expr_rxns = list(reaction_weights[np.isclose(reaction_weights, 1.)].index)
     results = []
     base_model = model.copy()
     iterator = create_iterator(model, reaction_weights, enum_method, kwargs)
@@ -134,11 +107,11 @@ def model_map(model: cobra.Model, reaction_weights: pd.Series, fun: Callable, fu
         if sol.error:
             continue
         if context_method == "enforce_off":
-            manager = EnforceOff(base_model, solution=sol, tol=tolerance)
+            manager = EnforceOff(base_model, solution=sol, thr=tolerance)
         elif context_method == "enforce_inactive":
             manager = EnforceInactive(base_model, solution=sol, epsilon=epsilon, low_expr_rxns=low_expr_rxns)
         elif context_method == "enforce_inactive_off":
-            manager = EnforceInactiveOff(base_model, solution=sol, epsilon=epsilon, tol=tolerance,
+            manager = EnforceInactiveOff(base_model, solution=sol, epsilon=epsilon, thr=tolerance,
                                          low_expr_rxns=low_expr_rxns)
         elif context_method == "enforce_active":
             manager = EnforceActive(base_model, solution=sol, epsilon=epsilon, high_expr_rxns=high_expr_rxns)
@@ -150,3 +123,4 @@ def model_map(model: cobra.Model, reaction_weights: pd.Series, fun: Callable, fu
         with manager as context_model:
             results.append(fun(context_model, **fun_kwargs))
     return results
+# endregion

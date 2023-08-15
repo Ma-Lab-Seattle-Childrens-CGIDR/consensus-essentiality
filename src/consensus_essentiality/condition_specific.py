@@ -8,21 +8,21 @@ import six
 
 
 # region Context Specific Model Functions
-def enforce_off(model: cobra.Model, solution: cobra.Solution, tol: float) -> cobra.Model:
+def enforce_off(model: cobra.Model, solution: cobra.Solution, thr: float) -> cobra.Model:
     """
     Method to remove reactions whose flux is below tolerance
     :param model: GSMM to modify
     :type model: cobra.Model
     :param solution: Cobra solutions with fluxes to use for determining activity of reactions
     :type solution: cobra.Solution
-    :param tol: Tolerance, any reaction with flux less than tolerance is knocked out
-    :type tol: float
+    :param thr: Tolerance, any reaction with flux less than tolerance is knocked out
+    :type thr: float
     :return: Updated GSMM
     :rtype: cobra.Model
     """
     updated_model = model.copy()
     fluxes = solution.fluxes
-    rxns_to_rem = list(fluxes[np.abs(fluxes) < tol].index)
+    rxns_to_rem = list(fluxes[np.abs(fluxes) < thr].index)
     for rxn in rxns_to_rem:
         updated_model.reactions.get_by_id(rxn).knock_out()
     return updated_model
@@ -125,7 +125,7 @@ def enforce_both(model: cobra.Model, solution: cobra.Solution, epsilon: float, l
     return updated_model
 
 
-def enforce_inactive_off(model: cobra.Model, solution: cobra.Solution, epsilon: float, tol: float, low_expr_rxns: list):
+def enforce_inactive_off(model: cobra.Model, solution: cobra.Solution, epsilon: float, thr: float, low_expr_rxns: list):
     """
     Enforce low flux through reactions with low expression values, whose flux magnitude in the solution is less than
         epsilon
@@ -135,8 +135,8 @@ def enforce_inactive_off(model: cobra.Model, solution: cobra.Solution, epsilon: 
     :type solution: cobra.Solution
     :param epsilon: Threshold for a reaction flux, below which the reaction is considered inactive
     :type epsilon: float
-    :param tol: Threshold for reaction flux, below which the reaction is considered off
-    :type tol: float
+    :param thr: Threshold for reaction flux, below which the reaction is considered off
+    :type thr: float
     :param low_expr_rxns: List of reactions which are considered to have low expression values
     :type low_expr_rxns: list
     :return: Updated model with inactive reactions forced to be inactive
@@ -151,7 +151,7 @@ def enforce_inactive_off(model: cobra.Model, solution: cobra.Solution, epsilon: 
             rev = rxn_obj.reversibility
             bounds = _force_inactive(epsilon=epsilon, lb=rxn_obj.lower_bound, ub=rxn_obj.upper_bound, reversible=rev)
             updated_model.reactions.get_by_id(rxn).bounds = bounds
-    rxns_to_rem = list(fluxes[np.abs(fluxes) < tol].index)
+    rxns_to_rem = list(fluxes[np.abs(fluxes) < thr].index)
     for rxn in rxns_to_rem:
         updated_model.reactions.get_by_id(rxn).knock_out()
     return updated_model
@@ -167,11 +167,11 @@ class EnforceOff:
     :type model: cobra.Model
     :param solution: Solution returned from the imat methods, with fluxes property
     :type solution: cobra.Solution
-    :param tol: Cutoff, below which reactions are considered off and knocked out
-    :type tol: float
+    :param thr: Cutoff, below which reactions are considered off and knocked out
+    :type thr: float
     """
 
-    def __init__(self, model, solution, tol):
+    def __init__(self, model, solution, thr):
         """
         Constructor method
 
@@ -179,12 +179,12 @@ class EnforceOff:
         :type model: cobra.Model
         :param solution: Solution returned from the imat methods, with fluxes property
         :type solution: cobra.Solution
-        :param tol: Cutoff, below which reactions are considered off and knocked out
-        :type tol: float
+        :param thr: Cutoff, below which reactions are considered off and knocked out
+        :type thr: float
         """
         self.model = model
         self.solution = solution
-        self.tol = tol
+        self.tol = thr
         self.rxn_bounds = {}
 
     def __enter__(self):
@@ -463,13 +463,13 @@ class EnforceInactiveOff:
     :type solution: cobra.Solution
     :param epsilon: Cutoff, below which reactions are considered inactive, above which reactions are considered active
     :type epsilon: float
-    :param tol: Cutoff, below which reactions are considered off
-    :type tol: float
+    :param thr: Cutoff, below which reactions are considered off
+    :type thr: float
     :param low_expr_rxns: List of reactions which are considered to have low expression values
     :type low_expr_rxns: list
     """
 
-    def __init__(self, model: cobra.Model, solution: cobra.Solution, epsilon: float, tol: float, low_expr_rxns: list):
+    def __init__(self, model: cobra.Model, solution: cobra.Solution, epsilon: float, thr: float, low_expr_rxns: list):
         """
         Constructor method
 
@@ -479,15 +479,15 @@ class EnforceInactiveOff:
         :type solution: cobra.Solution
         :param epsilon: Cutoff, below which reactions are considered inactive, above which reactions are considered active
         :type epsilon: float
-        :param tol: Cutoff, below which reactions are considered off
-        :type tol: float
+        :param thr: Cutoff, below which reactions are considered off
+        :type thr: float
         :param low_expr_rxns: List of reactions which are considered to have low expression values
         :type low_expr_rxns: list
         """
         self.model = model
         self.solution = solution
         self.epsilon = epsilon
-        self.tol = tol
+        self.tol = thr
         self.low_expr_rxns = low_expr_rxns
         self.rxn_bounds = {}
 
