@@ -555,6 +555,8 @@ def _force_inactive(epsilon: float, lb: float, ub: float, reversible: bool) -> t
     :return: Updated bounds
     :rtype: tuple[float,float]
     """
+    if epsilon < 0:
+        raise ValueError("Epsilon must not be negative")
     updated_lb = lb
     updated_ub = ub
     # If the reaction is reversible, its bounds range spans 0
@@ -615,6 +617,8 @@ def _force_active(epsilon: float, lb: float, ub: float, reversible: bool, forwar
     """
     updated_lb = lb
     updated_ub = ub
+    if epsilon < 0:
+        raise ValueError("Epsilon must not be negative")
     if reversible:
         if forward:
             if epsilon <= ub:

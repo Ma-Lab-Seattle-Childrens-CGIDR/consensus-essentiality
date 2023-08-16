@@ -1,5 +1,5 @@
 """
-Function for using dexom method to create several models and then
+Function for using dexom method to create several models and then compute essential genes from them
 """
 
 # region Imports
@@ -70,8 +70,9 @@ def consensus_essential_rxn_weights(model: cobra.Model, essential_prop: float, r
     :type context_specific_method: str
     :param kwargs: Arguments to pass to iterator's class constructor method
     :type kwargs: dicts
-    :return: Tuple of essential genes, and infeasible genes dataframes
-    :rtype: tuple[pd.DataFrame, pd.DataFrame]
+    :return: Dataframe of essentiality predictions, True means essential, False means non-essential, and pd.NA means
+        that the solver returned an error
+    :rtype: pd.DataFrame
     """
     if "maxiter" in kwargs:
         maxiter = kwargs["maxiter"]
@@ -80,7 +81,6 @@ def consensus_essential_rxn_weights(model: cobra.Model, essential_prop: float, r
     genes = [gene.id for gene in model.genes]
     iter_cols = ["iter_%i" % iteration for iteration in range(1, maxiter + 1)]
     essential_genes_df = pd.DataFrame(False, index=genes, columns=iter_cols)
-    infeas_genes_df = pd.DataFrame(False, index=genes, columns=iter_cols)
     base_model = model.copy()
     iterator = consensus_essentiality.utils.create_iterator(model=model, reaction_weights=reaction_weights,
                                                             enum_method=enum_method, kwargs=kwargs)
@@ -119,8 +119,10 @@ def consensus_essential_rxn_weights(model: cobra.Model, essential_prop: float, r
                                                      return_error_status_genes=True)
 
         essential_genes_df.loc[list(ess_genes), "iter_%i" % (i + 1)] = True
-        infeas_genes_df.loc[list(error_genes), "iter_%i" % (i + 1)] = True
-    return essential_genes_df, infeas_genes_df
+        essential_genes_df.loc[list(error_genes), "iter_%i" % (i + 1)] = pd.NA
+        final_iter = i
+
+    return essential_genes_df
 
 
 def consensus_essential_gene_expr(model: cobra.Model, essential_prop: float,
@@ -161,12 +163,132 @@ def consensus_essential_gene_expr(model: cobra.Model, essential_prop: float,
     :type context_specific_method: str
     :param kwargs: Arguments to pass to iterator's class constructor method
     :type kwargs: dicts
-    :return: Tuple of essential genes, and infeasible genes dataframes
-    :rtype: tuple[pd.DataFrame, pd.DataFrame]
+    :return: Dataframe of essentiality predictions, True means essential, False means non-essential, and pd.NA means
+        that the solver returned an error
+    :rtype: pd.DataFrame
     """
     rxn_weights = expression_to_weights(gene_expression=gene_expression, proportion=proportion, gene_axis=gene_axis,
                                         agg_fun=agg_fun)
     return consensus_essential_rxn_weights(model=model, essential_prop=essential_prop, reaction_weights=rxn_weights,
                                            enum_method=enum_method, context_specific_method=context_specific_method,
                                            **kwargs)
+
+
 # endregion
+
+# region Functions for Combining Consensus Essentiality Predictions
+
+
+def compute_essentiality(consensus_essentiality_df: pd.DataFrame, aggregation_func: Callable[[pd.Series], bool],
+                         **kwargs):
+    """
+    Computes essentiality predictions from the consensus_essentiality dataframe
+
+    :param consensus_essentiality_df:
+    :param aggregation_func:
+    :return:
+    """
+    return consensus_essentiality_df.agg(aggregation_func, **kwargs)
+
+
+# endregion
+
+# region Aggregation Strategies
+
+def aggstrat_any(essentiality_series: pd.Series, ignore_na: bool = False):
+    """
+    Aggregation strategy function, where a gene is considered essential if it is essential in any of the context
+    specific models
+
+    :param essentiality_series: Series of essentiality predictions, with True for predicted essential, False for
+        predicted non-essential, and NA for any infeasible status returns from solver.
+    :type essentiality_series: pd.Series
+    :param ignore_na: Whether to ignore NA values. When False, will return True if any values are True, False if
+        all values are False and none are NA, and NA when all non-NA values are False.
+    :return: True if gene is considered essential by this strategy, False if gene is considered non-essential, and NA
+        if the gene essentiality can't be determined by this strategy
+    :rtype: bool
+    """
+    if not ignore_na:
+        res = np.any(essentiality_series)
+        if res:
+            return res
+        return pd.NA if np.any(pd.isna(essentiality_series)) else res
+    return np.any(essentiality_series)
+
+
+def aggstrat_all(essentiality_series: pd.Series, ignore_na: bool = False):
+    """
+    Aggregation strategy function, where a gene is considered essential if it is essential in all the context
+    specific models
+
+    :param essentiality_series: Series of essentiality predictions, with True for predicted essential, False for
+        predicted non-essential, and NA for any infeasible status returns from solver.
+    :type essentiality_series: pd.Series
+    :param ignore_na: Whether to ignore NA values. When False, will return True if all values are True and none are NA,
+        will return False when any values are False, will return NA if all non-NA values are True
+    :return: True if gene is considered essential by this strategy, False if gene is considered non-essential, and NA
+        if the gene essentiality can't be determined by this strategy
+    :rtype: bool
+    """
+    if not ignore_na:
+        res = np.all(essentiality_series)
+        if not np.any(pd.isna(essentiality_series)):
+            return res
+        if np.any(essentiality_series.eq(False)):
+            return False
+        return pd.NA
+    return np.all(essentiality_series)
+
+
+# Note: Ties will be in False's favor
+def aggstrat_majority(essentiality_series: pd.Series, ignore_na: bool = False):
+    """
+    Aggregation strategy function, where a gene is considered essential if the majority of context specific models
+    predict it to be essential
+
+    :param essentiality_series:
+    :param ignore_na:
+    :return:
+    """
+    essentiality_series = essentiality_series.astype("Int64")
+    counts = essentiality_series.value_counts(dropna=False)
+    if 0 not in counts:
+        counts[0] = 0
+    if 1 not in counts:
+        counts[1] = 0
+    if pd.NA not in counts:
+        counts[pd.NA] = 0
+    counts = counts.rename({0: False, 1: True})
+    if ignore_na:
+        return counts[True] > counts[False]
+    if pd.NA not in counts:
+        counts[pd.NA] = 0
+    length = counts.sum()
+    if counts[True] > length * 0.5:
+        return True
+    if counts[False] > length * 0.5:
+        return False
+    if (counts[False] == counts[True]) and (counts[pd.NA] == 0):
+        return False
+    return pd.NA
+
+# endregion
+
+def count_bool_vals(series_to_count:pd.Series):
+    """
+    Helper function for counting a series of boolean values, and making sure that count series has True, False, and
+    pd.NA in the index
+
+    :param series_to_count: Boolean series to count values for
+    :type series_to_count: pd.Series
+    :return: Series of count values, with True, False, and pd.NA as index
+    """
+    counts = series_to_count.value_counts(dropna=False)
+    if 0 not in counts:
+        counts[0] = 0
+    if 1 not in counts:
+        counts[1] = 0
+    if pd.NA not in counts:
+        counts[pd.NA] = 0
+    return counts.rename({0: False, 1: True}).astype("boolean")
